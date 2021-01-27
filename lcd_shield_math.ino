@@ -10,12 +10,12 @@ const int pin_BL = 10;
 LiquidCrystal lcd( pin_RS,  pin_EN,  pin_d4,  pin_d5,  pin_d6,  pin_d7);
 
 uint8_t clicked = 0;
-uint8_t leftNum = 3;
-uint8_t rightNum = 2;
+int16_t leftNum = 1;
+int16_t rightNum = 1;
 uint8_t selectedNum = 1;
 char *operators[4]={"+","-","*","/"};
 uint8_t selectedOp = 0;
-int16_t result;
+int32_t result;
 float divResult;
 
 void setup() {
@@ -28,7 +28,7 @@ void setup() {
 void loop() {
   getKeyPress();
   updateDisplay();
-  clicked ^= 1;
+  clicked = false;
 } 
 
 void getKeyPress(){
@@ -37,7 +37,7 @@ void getKeyPress(){
    x = analogRead (0);
    clicked = true;
    delay(150); 
-   if (x < 60) { //clicked right, move cursor to rightNum
+   if (x < 60) { //RIGHT: move cursor to rightNum
      selectedNum = 2;  
    }
    else if (x < 200) { //UP: increase currently selected Num
@@ -71,38 +71,41 @@ void getKeyPress(){
 }
 
 void updateDisplay(){
-
- lcd.setCursor(0,1);
- lcd.print(leftNum);
- lcd.setCursor(4,1);
- lcd.print(operators[selectedOp]);
- lcd.setCursor(6,1);
- lcd.print(rightNum);
- lcd.setCursor(10,1);
- lcd.print("=");
- lcd.setCursor(0,0);
+ 
  switch(selectedOp){
   case 0:
-    lcd.print("Addition!");
     result = leftNum+rightNum;
     break;
   case 1:
-    lcd.print("Subtraction!");
     result = leftNum-rightNum;
     break;
   case 2:
-    lcd.print("Multiplication!");
     result = leftNum*rightNum;
     break;
   case 3:
-    lcd.print("Division!");
     divResult = (float)leftNum/rightNum;
     break;
  }
- lcd.setCursor(12,1);
+ char str[16];
+ lcd.setCursor(0,0);
+ sprintf(str, "%d %c %d = ", leftNum, *operators[selectedOp], rightNum);
+ lcd.print(str);
+ 
+ lcd.setCursor(0,1);
  if(selectedOp != 3){
-  lcd.print(result);
+  sprintf(str, "%d",result);
  }else{
-  lcd.print(divResult);
+  if(rightNum != 0){
+    char tmp[16];
+    sprintf(tmp, "%d.%u", (int)abs(divResult),(long)(abs(divResult)*10000)%10000);
+    if(leftNum < 0 || rightNum < 0){
+      sprintf(str, "-%s",tmp);
+    }else{
+      sprintf(str, "%s", tmp);
+    }
+  }else{
+    sprintf(str, "Error.");
+  }
  }
+ lcd.print(str);
 }
